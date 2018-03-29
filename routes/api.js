@@ -5,7 +5,7 @@ const mysql = require('mysql');
 const con = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Nikita06021999',
+    password: 'password',
     database: 'post_office_db'
 });
 
