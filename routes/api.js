@@ -3,6 +3,7 @@ const router = express.Router();
 const mysql = require('mysql');
 
 const con = mysql.createConnection({
+    multipleStatements: true,
     host: 'localhost',
     user: 'root',
     password: 'password',
@@ -18,35 +19,66 @@ con.connect(function(err) {
     }
 });
 
-router.post('/users', function(req, res) {
-    let sql = 'INSERT INTO user (first_name, last_name, username, phone_number, status, e_mail, password, gender, age) VALUES ?';
-    let values = [
-        [
-            req.body.first_name,
-            req.body.last_name,
-            req.body.username,
-            req.body.phone_number,
-            'user',
-            req.body.e_mail,
-            req.body.password,
-            req.body.gender,
-            req.body.age
-        ]
-    ];
-    con.query(sql, [ values ], function(err, rows, fields) {
+    router.post('/users', function(req, res) {
+        let sql = 'INSERT INTO user (first_name, last_name, username, phone_number, status, e_mail, password, gender, age) VALUES ?';
+        let values = [
+            [
+                req.body.first_name,
+                req.body.last_name,
+                req.body.username,
+                req.body.phone_number,
+                'user',
+                req.body.e_mail,
+                req.body.password,
+                req.body.gender,
+                req.body.age
+            ]
+        ];
+        con.query(sql, [ values ], function(err, rows, fields) {
+            if(!err) {
+                res.json(rows);
+            } else if(err) {
+                res.status(500).send(err);
+            }
+        });
+});
+
+router.get('/client', function(req, res) {
+    let sql = 'INSERT INTO post_office_db.client(user_id, client_first_name, client_last_name, client_phone_number, client_status, client_age)' +
+        'SELECT user_id, first_name, last_name, phone_number, status, age ' +
+        'FROM post_office_db.user WHERE user_id IN (SELECT LAST_INSERT_ID() FROM user)';
+    con.query(sql, function(err, rows, fields) {
         if(!err) {
             res.json(rows);
         } else if(err) {
             res.status(500).send(err);
         }
-    })
+    });
+});
+
+router.post('/clients', function(req, res) {
+   let sql = 'INSERT INTO client(client_first_name, client_last_name, client_phone_number) VALUES ?';
+   let values = [
+       [
+           req.body.client.client_first_name,
+           req.body.client.client_last_name,
+           req.body.client.client_phone
+       ]
+   ];
+   con.query(sql, [ values ], function(err, rows, fields) {
+       if(!err) {
+           res.json(rows);
+       } else if(err) {
+           res.status(500).send(err);
+       }
+   })
 });
 
 router.post('/authenticate', function(req, res) {
     console.log('body: ', req.body);
     let email = req.body.e_mail;
     let password = req.body.password;
-    let sql = 'SELECT * from user WHERE e_mail = ? AND password = ? LIMIT 1';
+    let sql = 'SELECT * FROM client WHERE client.user_id IN (SELECT user_id from user WHERE user.e_mail = ? AND user.password = ?) LIMIT 1';
     con.query(sql, [email, password], function(err, rows, fields) {
         if(!err) {
             res.json(rows[0]);
@@ -80,10 +112,13 @@ router.get('/offices', function(req, res) {
 });
 
 router.post('/statements', function(req, res) {
-    let sql = 'INSERT INTO statement (user_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
+    let sql = 'INSERT INTO statement (user_id, sender_first_name, sender_last_name, sender_phone, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
     let values = [
         [
             req.body.user_id,
+            req.body.sender_fn,
+            req.body.sender_ln,
+            req.body.sender_ph,
             req.body.order.product_name,
             req.body.order.weight,
             req.body.order.storage_conditions,
@@ -99,8 +134,7 @@ router.post('/statements', function(req, res) {
             req.body.order.delivery_address
         ]
 ];
-    con.query(
-        sql, [values], function(err, rows, fields) {
+    con.query(sql, [values], function(err, rows, fields) {
         if(!err) {
             res.json(rows);
         } else if(err) {
@@ -110,10 +144,14 @@ router.post('/statements', function(req, res) {
 });
 
 router.post('/statements1', function(req, res) {
-    let sql = 'INSERT INTO statement (user_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
+    console.log(req.body);
+    let sql = 'INSERT INTO statement (user_id, sender_first_name, sender_last_name, sender_phone, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
     let values = [
         [
             req.body.user_id,
+            req.body.sender_fn1,
+            req.body.sender_ln1,
+            req.body.sender_ph1,
             req.body.order1.product_name,
             req.body.order1.weight,
             req.body.order1.storage_conditions,
@@ -136,6 +174,37 @@ router.post('/statements1', function(req, res) {
             res.status(500).send(err);
         }
     });
+});
+
+router.post('/statements2', function(req, res) {
+   let sql = 'INSERT INTO statement (sender_first_name, sender_last_name, sender_phone, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
+   let values = [
+       [
+           req.body.order2.client_first_name,
+           req.body.order2.client_last_name,
+           req.body.order2.client_phone,
+           req.body.order2.product_name,
+           req.body.order2.weight,
+           req.body.order2.storage_conditions,
+           req.body.order2.count,
+           'true',
+           'waiting for sending',
+           req.body.order2.recipient_first_name,
+           req.body.order2.recipient_last_name,
+           req.body.order2.recipient_phone,
+           req.body.order2.shipping_city.city_name,
+           req.body.order2.shipping_address,
+           req.body.order2.delivery_city.city_name,
+           req.body.order2.delivery_address
+       ]
+    ];
+    con.query(sql, [ values ], function(err, rows, fields) {
+      if(!err) {
+          res.json(rows);
+      } else if(err) {
+          res.status(500).send(err);
+      }
+    })
 });
 
 router.get('/statements', function(req, res) {
