@@ -54,42 +54,6 @@ router.post('/users', (req, res) => {
     });
 });
 
-router.post('/sender', function(req, res) {
-   let sql = 'INSERT INTO client(client_first_name, client_last_name, client_phone_number) VALUES ?';
-   let values = [
-       [
-           req.body.client.client_first_name,
-           req.body.client.client_last_name,
-           req.body.client.client_phone
-       ]
-   ];
-   con.query(sql, [ values ], function(err, rows, fields) {
-       if(!err) {
-           res.json(rows);
-       } else if(err) {
-           res.status(500).send(err);
-       }
-   })
-});
-
-router.post('/recipient', function(req, res) {
-    let sql = 'INSERT INTO client(client_first_name, client_last_name, client_phone_number) VALUES ?';
-    let values = [
-        [
-            req.body.client1.recipient_first_name,
-            req.body.client1.recipient_last_name,
-            req.body.client1.recipient_phone
-        ]
-    ];
-    con.query(sql, [ values ], function(err, rows, fields) {
-        if(!err) {
-            res.json(rows);
-        } else if(err) {
-            res.status(500).send(err)
-        }
-    })
-});
-
 router.post('/authenticate', function(req, res) {
     console.log('body: ', req.body);
     let email = req.body.e_mail;
@@ -128,27 +92,23 @@ router.get('/offices', function(req, res) {
 });
 
 router.post('/statements', function(req, res) {
-    console.log(req.body);
-    let sql = 'INSERT INTO statement (client_id, sender_first_name, sender_last_name, sender_phone, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
+    let sql = 'INSERT INTO statement (sender_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
     let values = [
         [
             req.body.client_id,
-            req.body.sender_fn,
-            req.body.sender_ln,
-            req.body.sender_ph,
             req.body.order.product_name,
             req.body.order.weight,
             req.body.order.storage_conditions,
             req.body.order.count,
             'none',
             'waiting for sending',
-            req.body.order.recipient.first_name,
-            req.body.order.recipient.last_name,
-            req.body.order.recipient.phone_number,
+            req.body.order.recipient.client_id,
             req.body.order.shipping_city.city_name,
-            req.body.order.shipping_address,
+            req.body.order.shipping_address.address,
+            req.body.order.shipping_address.office_id,
             req.body.order.delivery_city.city_name,
-            req.body.order.delivery_address
+            req.body.order.delivery_address.address,
+            req.body.order.delivery_address.office_id
         ]
 ];
     con.query(sql, [values], function(err, rows, fields) {
@@ -161,77 +121,110 @@ router.post('/statements', function(req, res) {
 });
 
 router.post('/statements1', function(req, res) {
-    console.log(req.body);
-    let sql = 'INSERT INTO statement (client_id, sender_first_name, sender_last_name, sender_phone, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
+    console.log(req.body, 1111111, req.body.data);
+    let sql = 'INSERT INTO client (client_first_name, client_last_name, client_phone_number) VALUES ?';
     let values = [
         [
-            req.body.client_id,
-            req.body.sender_fn1,
-            req.body.sender_ln1,
-            req.body.sender_ph1,
-            req.body.order1.product_name,
-            req.body.order1.weight,
-            req.body.order1.storage_conditions,
-            req.body.order1.count,
-            'none',
-            'waiting for sending',
-            req.body.order1.recipient_first_name,
-            req.body.order1.recipient_last_name,
-            req.body.order1.recipient_phone,
-            req.body.order1.shipping_city.city_name,
-            req.body.order1.shipping_address,
-            req.body.order1.delivery_city.city_name,
-            req.body.order1.delivery_address
+            req.body.data.recipient.client_first_name,
+            req.body.data.recipient.client_last_name,
+            req.body.data.recipient.client_phone_number
         ]
     ];
-    con.query(sql, [ values ], function(err, rows, fields) {
-        if(!err) {
-            res.json(rows);
-        } else if(err) {
-            res.status(500).send(err);
-        }
+    con.query(sql, [ values ], (err, rows, fields) => {
+      if(err) {
+          return res.status(500).send(err);
+      }
+      let sql = 'INSERT INTO statement (sender_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+      let values = [
+          [
+              req.body.client_id,
+              req.body.data.order1.product_name,
+              req.body.data.order1.weight,
+              req.body.data.order1.storage_conditions,
+              req.body.data.order1.count,
+              'none',
+              'waiting for sending',
+              rows.insertId,
+              req.body.data.order1.shipping_city.city_name,
+              req.body.data.order1.shipping_address.address,
+              req.body.data.order1.shipping_address.office_id,
+              req.body.data.order1.delivery_city.city_name,
+              req.body.data.order1.delivery_address.address,
+              req.body.data.order1.delivery_address.office_id
+          ]
+      ];
+      con.query(sql, [ values ], function(err, rows, fields) {
+          if(!err) {
+              res.json(rows);
+          } else if(err) {
+              res.status(500).send(err);
+          }
+      });
     });
 });
 
 router.post('/statements2', function(req, res) {
-   let sql = 'INSERT INTO statement (sender_first_name, sender_last_name, sender_phone, product_name, weight, storage_conditions, count, status, delivery_status, recipient_first_name, recipient_last_name, recipient_phone, shipping_city, shipping_address, delivery_city, delivery_address) VALUES ?';
-   let values = [
-       [
-           req.body.order2.client_first_name,
-           req.body.order2.client_last_name,
-           req.body.order2.client_phone,
-           req.body.order2.product_name,
-           req.body.order2.weight,
-           req.body.order2.storage_conditions,
-           req.body.order2.count,
-           'true',
-           'waiting for sending',
-           req.body.order2.recipient_first_name,
-           req.body.order2.recipient_last_name,
-           req.body.order2.recipient_phone,
-           req.body.order2.shipping_city.city_name,
-           req.body.order2.shipping_address,
-           req.body.order2.delivery_city.city_name,
-           req.body.order2.delivery_address
-       ]
+    console.log(req.body);
+    let sql = 'INSERT INTO client(client_first_name, client_last_name, client_phone_number) VALUES ?';
+    let values = [
+        [
+            req.body.sender.client_first_name,
+            req.body.sender.client_last_name,
+            req.body.sender.client_phone_number
+        ]
     ];
     con.query(sql, [ values ], function(err, rows, fields) {
-      if(!err) {
-          res.json(rows);
-      } else if(err) {
-          res.status(500).send(err);
-      }
-    })
+        if(err) {
+            return res.status(500).send(err);
+        }
+        let sql = 'INSERT INTO client(client_first_name, client_last_name, client_phone_number) VALUES ?';
+        let values = [
+            [
+                req.body.recipient.client_first_name,
+                req.body.recipient.client_last_name,
+                req.body.recipient.client_phone_number
+            ]
+        ];
+        con.query(sql, [ values ], (err1, rows1, fields1) => {
+            if(err1) {
+                return res.status(500).send(err1)
+            }
+            let sql = 'INSERT INTO statement (sender_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+            let values = [
+                [
+                    rows.insertId,
+                    req.body.order2.product_name,
+                    req.body.order2.weight,
+                    req.body.order2.storage_conditions,
+                    req.body.order2.count,
+                    'true',
+                    'waiting for sending',
+                    rows1.insertId,
+                    req.body.order2.shipping_city.city_name,
+                    req.body.order2.shipping_address.address,
+                    req.body.order2.shipping_address.office_id,
+                    req.body.order2.delivery_city.city_name,
+                    req.body.order2.delivery_address.address,
+                    req.body.order2.delivery_address.office_id
+                ]
+            ];
+            con.query(sql, [ values ], function(err, rows, fields) {
+                if (err) {
+                     return res.status(500).send(err);
+                }
+                res.json(rows);
+            });
+        });
+    });
 });
 
 router.get('/statements', function(req, res) {
     let sql = 'SELECT * from statement WHERE status = "none"';
     con.query(sql, function(err, rows ,fields) {
-        if(!err) {
-            res.json(rows);
-        } else if(err) {
-            res.status(500).send(err);
+        if(err) {
+           return res.status(500).send(err);
         }
+        res.json(rows)
     })
 });
 
