@@ -92,36 +92,47 @@ router.get('/offices', function(req, res) {
 });
 
 router.post('/statements', function(req, res) {
-    let sql = 'INSERT INTO statement (sender_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+    let sql ='INSERT INTO product (product_name, weight, storage_conditions, count, status, delivery_status) VALUES ?';
     let values = [
         [
-            req.body.client_id,
-            req.body.order.product_name,
-            req.body.order.weight,
-            req.body.order.storage_conditions,
-            req.body.order.count,
+            req.body.data.product.product_name,
+            req.body.data.product.weight,
+            req.body.data.product.storage_conditions,
+            req.body.data.product.count,
             'none',
-            'waiting for sending',
-            req.body.order.recipient.client_id,
-            req.body.order.shipping_city.city_name,
-            req.body.order.shipping_address.address,
-            req.body.order.shipping_address.office_id,
-            req.body.order.delivery_city.city_name,
-            req.body.order.delivery_address.address,
-            req.body.order.delivery_address.office_id
+            'waiting for sending'
         ]
-];
-    con.query(sql, [values], function(err, rows, fields) {
-        if(!err) {
-            res.json(rows);
-        } else if(err) {
-            res.status(500).send(err);
+    ];
+    con.query(sql, [ values ], function(err, rows, fields) {
+        if(err) {
+            return res.status(500).send(err);
         }
+        let sql = 'INSERT INTO statement (product_id, sender_id, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+        let values = [
+            [
+                rows.insertId,
+                req.body.client_id,
+                req.body.data.order.recipient.client_id,
+                req.body.data.order.shipping_city.city_name,
+                req.body.data.order.shipping_address.address,
+                req.body.data.order.shipping_address.office_id,
+                req.body.data.order.delivery_city.city_name,
+                req.body.data.order.delivery_address.address,
+                req.body.data.order.delivery_address.office_id
+            ]
+    ];
+        con.query(sql, [values], function(err, rows, fields) {
+            if(!err) {
+                res.json(rows);
+            } else if(err) {
+                res.status(500).send(err);
+            }
+        })
     })
 });
 
 router.post('/statements1', function(req, res) {
-    console.log(req.body, 1111111, req.body.data);
+    console.log(req.body.data);
     let sql = 'INSERT INTO client (client_first_name, client_last_name, client_phone_number) VALUES ?';
     let values = [
         [
@@ -131,35 +142,45 @@ router.post('/statements1', function(req, res) {
         ]
     ];
     con.query(sql, [ values ], (err, rows, fields) => {
-      if(err) {
-          return res.status(500).send(err);
-      }
-      let sql = 'INSERT INTO statement (sender_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
-      let values = [
-          [
-              req.body.client_id,
-              req.body.data.order1.product_name,
-              req.body.data.order1.weight,
-              req.body.data.order1.storage_conditions,
-              req.body.data.order1.count,
-              'none',
-              'waiting for sending',
-              rows.insertId,
-              req.body.data.order1.shipping_city.city_name,
-              req.body.data.order1.shipping_address.address,
-              req.body.data.order1.shipping_address.office_id,
-              req.body.data.order1.delivery_city.city_name,
-              req.body.data.order1.delivery_address.address,
-              req.body.data.order1.delivery_address.office_id
-          ]
-      ];
-      con.query(sql, [ values ], function(err, rows, fields) {
-          if(!err) {
-              res.json(rows);
-          } else if(err) {
-              res.status(500).send(err);
-          }
-      });
+        if(err) {
+            return res.status(500).send(err);
+        }
+        let sql = 'INSERT INTO product (product_name, weight, storage_conditions, count, status, delivery_status) VALUES ?';
+        let values = [
+            [
+                req.body.data.product1.product_name,
+                req.body.data.product1.weight,
+                req.body.data.product1.storage_conditions,
+                req.body.data.product1.count,
+                'none',
+                'waiting for sending'
+            ]
+        ];
+        con.query(sql, [ values ], (err1, rows1, fields1) => {
+            if(err1) {
+                return res.status(500).send(err1);
+            }
+            let sql = 'INSERT INTO statement (product_id, sender_id, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+            let values = [
+                [
+                    rows1.insertId,
+                    req.body.client_id,
+                    rows.insertId,
+                    req.body.data.order1.shipping_city.city_name,
+                    req.body.data.order1.shipping_address.address,
+                    req.body.data.order1.shipping_address.office_id,
+                    req.body.data.order1.delivery_city.city_name,
+                    req.body.data.order1.delivery_address.address,
+                    req.body.data.order1.delivery_address.office_id
+                ]
+            ];
+            con.query(sql, [ values ], (err2, rows2, fields2) => {
+                if(err2) {
+                    return res.status(500).send(err2);
+                }
+                res.json(rows2)
+            })
+        })
     });
 });
 
@@ -189,37 +210,48 @@ router.post('/statements2', function(req, res) {
             if(err1) {
                 return res.status(500).send(err1)
             }
-            let sql = 'INSERT INTO statement (sender_id, product_name, weight, storage_conditions, count, status, delivery_status, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+            let sql = 'INSERT INTO product (product_name, weight, storage_conditions, count, status, delivery_status) VALUES ?';
             let values = [
                 [
-                    rows.insertId,
-                    req.body.order2.product_name,
-                    req.body.order2.weight,
-                    req.body.order2.storage_conditions,
-                    req.body.order2.count,
+                    req.body.product2.product_name,
+                    req.body.product2.weight,
+                    req.body.product2.storage_conditions,
+                    req.body.product2.count,
                     'true',
-                    'waiting for sending',
-                    rows1.insertId,
-                    req.body.order2.shipping_city.city_name,
-                    req.body.order2.shipping_address.address,
-                    req.body.order2.shipping_address.office_id,
-                    req.body.order2.delivery_city.city_name,
-                    req.body.order2.delivery_address.address,
-                    req.body.order2.delivery_address.office_id
+                    'waiting for sending'
                 ]
             ];
-            con.query(sql, [ values ], function(err, rows, fields) {
-                if (err) {
-                     return res.status(500).send(err);
+            con.query(sql, [ values ], (err2, rows2, fields2) => {
+                if(err2) {
+                    return res.status(500).send(err2)
                 }
-                res.json(rows);
+                let sql = 'INSERT INTO statement (product_id, sender_id, recipient_id, shipping_city, shipping_address, shipping_office_id, delivery_city, delivery_address, delivery_office_id) VALUES ?';
+                let values = [
+                    [
+                        rows2.insertId,
+                        rows.insertId,
+                        rows1.insertId,
+                        req.body.order2.shipping_city.city_name,
+                        req.body.order2.shipping_address.address,
+                        req.body.order2.shipping_address.office_id,
+                        req.body.order2.delivery_city.city_name,
+                        req.body.order2.delivery_address.address,
+                        req.body.order2.delivery_address.office_id
+                    ]
+                ];
+                con.query(sql, [ values ], function(err, rows, fields) {
+                    if (err) {
+                         return res.status(500).send(err);
+                    }
+                    res.json(rows);
+                });
             });
         });
     });
 });
 
-router.get('/statements', function(req, res) {
-    let sql = 'SELECT * from statement WHERE status = "none"';
+router.get('/statement', function(req, res) {
+    let sql = 'SELECT * from product, statement WHERE product.status = "none" AND product.product_id = statement.product_id';
     con.query(sql, function(err, rows ,fields) {
         if(err) {
            return res.status(500).send(err);
@@ -228,9 +260,9 @@ router.get('/statements', function(req, res) {
     })
 });
 
-router.put('/approve/:statement_id', function(req, res) {
-    let sql = 'UPDATE statement SET status = "true" WHERE statement_id = ? AND status = "none"';
-    let statementId = req.params.statement_id;
+router.put('/approve/:product_id', function(req, res) {
+    let sql = 'UPDATE product SET status = "true" WHERE product_id = ? AND status = "none"';
+    let statementId = req.params.product_id;
     con.query(sql, statementId, function(err, rows, fields) {
         if(!err) {
             res.json(rows);
@@ -240,9 +272,9 @@ router.put('/approve/:statement_id', function(req, res) {
     })
 });
 
-router.put('/refuse/:statement_id', function(req, res) {
-    let sql = 'UPDATE statement SET status = "false" WHERE statement_id = ? AND status = "none"';
-    let statementId = req.params.statement_id;
+router.put('/refuse/:product_id', function(req, res) {
+    let sql = 'UPDATE product SET status = "false" WHERE product_id = ? AND status = "none"';
+    let statementId = req.params.product_id;
     con.query(sql, statementId, function(err, rows, fields) {
         if(!err) {
             res.json(rows);
